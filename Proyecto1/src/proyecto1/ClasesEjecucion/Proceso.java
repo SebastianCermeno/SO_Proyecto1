@@ -75,5 +75,34 @@ public class Proceso {
         return processID;
     }
     
-    
+    // Clase Interna, contiene la ejecución de los procesos
+    public class ProcessExecution extends Thread {
+        // Excepciones para manejar la ejecución del thread.
+        public class ClockCycleException extends RuntimeException {
+        }
+        public class ExecutionEndException extends RuntimeException {
+        }
+        
+        // public Cola messageQueue;
+        
+        @Override
+        public void run(){
+            try {
+                while (true) {
+                // Código de ejecución del Thread
+                    try {
+                        // Ciclo de checkeo de la cola de mensajes
+                        // Throws una interrupción dependiendo del mensaje
+                    }
+                    catch (ClockCycleException e) {
+                        // Guardado del estado del proceso en thread
+                        continue;
+                    }
+                }
+            }
+            catch (ExecutionEndException e) {
+                // Guardado del estado del proceso en Proceso
+            }
+        }
+    }
 }
