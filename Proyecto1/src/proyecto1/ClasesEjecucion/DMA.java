@@ -25,9 +25,9 @@ public class DMA {
             return length;
         }
         private class ProcessNode {
-            ProcessNode previous;
-            ProcessNode next;
-            Proceso storedProcess;
+            public ProcessNode previous;
+            public ProcessNode next;
+            public Proceso storedProcess;
             
         }
     }

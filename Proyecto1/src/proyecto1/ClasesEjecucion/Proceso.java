@@ -48,6 +48,9 @@ public class Proceso {
     private int cyclesPerformed;
     private IO_Bound_Behavior ioBound;
     
+    // Variables de IPC (Interprocess Communication)
+    
+    
     // Constructor 1: Proceso no usa E/S
     public void Proceso(int newProcessID, String newProcessName, int duration){
         processID = newProcessID;
@@ -108,7 +111,6 @@ public class Proceso {
         }
         
         public Cola schedulingMessageQueue;
-        public Cola dmaMessageQueue;
         public Proceso parentProcess;
         public int cyclesAlive = 0;
         
