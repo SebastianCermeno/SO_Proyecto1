@@ -75,6 +75,30 @@ public class Proceso {
         return processID;
     }
     
+    // Método: Retorna el número de ciclos total que debe ejecutarse el programa
+    public int getCyclesToFinish() {
+        return cyclesToFinish;
+    }
+    
+    // Método: Retorna el número de ciclos de ejecución realizados hasta ahora
+    public int getCyclesDone() {
+        return cyclesPerformed;
+    }
+    
+    // Método: Retorna un booleano true si el Proceso es IO Bound; false de lo contrario
+    public boolean isIOBound() {
+        if (ioBound != null) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    
+    // Método: Retorna el componente IOBound del Proceso
+    public IO_Bound_Behavior getIOComponent() {
+        return ioBound;
+    }
     // Clase Interna, contiene la ejecución de los procesos
     public class ProcessExecution extends Thread {
         // Excepciones para manejar la ejecución del thread.
@@ -83,16 +107,78 @@ public class Proceso {
         public class ExecutionEndException extends RuntimeException {
         }
         
-        // public Cola messageQueue;
+        public Cola schedulingMessageQueue;
+        public Cola dmaMessageQueue;
+        public Proceso parentProcess;
+        public int cyclesAlive = 0;
         
+        public int cyclesToFinish;
+        public int realCyclesPerformed;
+        public boolean isIOBound;
+        public IO_Bound_Behavior parentIO;
+        public int ioActivationRate;
+        private int ioCyclesToWait;
+        private int ioCyclesWaited;
+        
+        public void ProcessExecution(Cola messageInbox, Proceso parent) {
+            schedulingMessageQueue = messageInbox;
+            parentProcess = parent;
+            
+            cyclesToFinish = parentProcess.getCyclesToFinish();
+            realCyclesPerformed = parentProcess.getCyclesDone();
+            isIOBound = parentProcess.isIOBound();
+            parentIO = parentProcess.getIOComponent();
+        }
         @Override
         public void run(){
+            int cyclesUntilNextIO = 0;
             try {
                 while (true) {
                 // Código de ejecución del Thread
                     try {
+                        switch(parentProcess.currentState){
+                            case ProcessState.NEW:
+                                // Code
+                                break;
+                            case ProcessState.RUNNING:
+                                // Code
+                                break;
+                            case ProcessState.BLOCKED:
+                                // message dmamessage;
+                                // while true {
+                                // check dma messages
+                                // if null continue
+                                // if message CONTINUE {
+                                    // ioCyclesWaited += 1
+                                    // if ioCyclesWaited == ioCyclesToWait {
+                                        // dma.message(I am done!)
+                                        // semaphore release()
+                                        // }
+                                    // }
+                                // if message AWAIT break
+                                // if message AQUIRE {
+                                    // dma.acquiresemaphore()
+                                    // ioCyclesWaited += 1
+                                    // if ioCyclesWaited == ioCyclesToWait {
+                                        // dma.message(I am done!)
+                                        // semaphore release()
+                                        // }
+                                    // }
+                                break;
+                            case ProcessState.READY:
+                                // Code
+                                break;
+                        }
+                        cyclesAlive += 1;
                         // Ciclo de checkeo de la cola de mensajes
                         // Throws una interrupción dependiendo del mensaje
+                        // while (true) {
+                            // check schedulingMessage Queue
+                            // if null sleep X seconds
+                            // if message RUNNING throw clock exception(running)
+                            // if message READY throw clock exception(ready)
+                            // if message BLOCKED throw clock exception(block)
+                            // }
                     }
                     catch (ClockCycleException e) {
                         // Guardado del estado del proceso en thread

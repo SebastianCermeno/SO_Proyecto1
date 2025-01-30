@@ -15,4 +15,20 @@ public class DMA {
     public void DMA(int processesManaged) {
         IO_Semaphore = new Semaphore(processesManaged);
     }
+    
+    private class ProcessLinkedList {
+        private int length;
+        private ProcessNode root;
+        private ProcessNode last;
+        
+        public int getLength() {
+            return length;
+        }
+        private class ProcessNode {
+            ProcessNode previous;
+            ProcessNode next;
+            Proceso storedProcess;
+            
+        }
+    }
 }
