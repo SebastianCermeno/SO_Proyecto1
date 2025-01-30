@@ -22,6 +22,20 @@ public class Proceso {
         IO_DATA,
     }
     
+    // Enumerador contiene los posibles mensajes del DMA cuando el proceso
+    // está BLOCKED.
+    public enum DMA_Messages {
+        AWAIT,
+        CONNECT,
+        STAY,
+    }
+    
+    // Enumerador contiene los posibles mensajes del Scheduler cuando el proceso
+    // está en RUNNING o BLOCKED
+    public enum Scheduling_Messages {
+        // (Mensajes aquí)
+    }
+    
     // Contenedor de información de los comportamientos IO Bound
     private class IO_Bound_Behavior {
         public int callFrequency;
@@ -49,7 +63,8 @@ public class Proceso {
     private IO_Bound_Behavior ioBound;
     
     // Variables de IPC (Interprocess Communication)
-    
+    Cola dmaQueue = new Cola<DMA_Messages>();
+    Cola schedulingQueue = new Cola<Scheduling_Messages>();
     
     // Constructor 1: Proceso no usa E/S
     public void Proceso(int newProcessID, String newProcessName, int duration){
@@ -146,6 +161,24 @@ public class Proceso {
                                 // Code
                                 break;
                             case ProcessState.BLOCKED:
+                                DMA_Messages currentOperation;
+                                while (true) {
+                                    if (dmaQueue.length == 0) {
+                                        continue;
+                                    }
+                                    else {
+                                        currentOperation = (DMA_Messages)dmaQueue.dequeue();
+                                        break;
+                                    }
+                                }
+                                switch (currentOperation) {
+                                    case AWAIT:
+                                        break;
+                                    case CONNECT:
+                                        break;
+                                    case STAY:
+                                        break;
+                                }
                                 // message dmamessage;
                                 // while true {
                                 // check dma messages

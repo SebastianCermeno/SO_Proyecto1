@@ -9,20 +9,20 @@ package proyecto1.ClasesEjecucion;
  *
  * @author Sebastian Cermeno
  */
-public class Cola {
+public class Cola<T> {
     public Node first;
     public Node last;
     public int length;
     
-    public <T> void Queue(T element) {
+    public void Queue(T element) {
         if(first == null) {
-            Node<T> constructedNode = new Node<T>(element);
+            Node constructedNode = new Node(element);
             first = constructedNode;
             last = constructedNode;
             length += 1;
         }
         else {
-            Node<T> constructedNode = new Node<T>(element);
+            Node constructedNode = new Node(element);
             constructedNode.previous = last;
             constructedNode.next = null;
             last.next = constructedNode;
@@ -31,11 +31,21 @@ public class Cola {
         }
     }
     
-    // public T getValue() {
-        // return first.getValue();
-    // }
+    public T getValue() {
+        return first.getValue();
+    }
     
-    private class Node<T> {
+    public T dequeue() {
+        T value = getValue();
+        first = first.next;
+        length -= 1;
+        if (length <= 0) {
+            last = null;
+        }
+        return value;
+    }
+    
+    private class Node {
         private T value;
         public Node next;
         public Node previous;
