@@ -172,33 +172,39 @@ public class Proceso {
                                     }
                                 }
                                 switch (currentOperation) {
+                                    // El DMA no provee E/S este ciclo
                                     case AWAIT:
                                         break;
+                                    // El DMA comienza a realizar E/S para el proceso este ciclo
                                     case CONNECT:
+                                        try {
+                                            parentIO.IO_Provider.IO_Semaphore.acquire();
+                                        }
+                                        catch (InterruptedException e) {
+                                            System.out.println("Failed to Acquire on Connect Message");
+                                            break;
+                                        }
+                                        ioCyclesWaited += 1;
+                                        if (ioCyclesWaited == ioCyclesToWait) {
+                                            parentIO.IO_Provider.deliverMessage(DMA.MessageFromProcess.DONE, parentProcess);
+                                            parentIO.IO_Provider.IO_Semaphore.release();
+                                        }
+                                        else {
+                                            parentIO.IO_Provider.deliverMessage(DMA.MessageFromProcess.USING_IO, parentProcess);
+                                        }
                                         break;
+                                    // El DMA continua otorgando E/S este ciclo
                                     case STAY:
+                                        ioCyclesWaited += 1;
+                                        if (ioCyclesWaited == ioCyclesToWait) {
+                                            parentIO.IO_Provider.deliverMessage(DMA.MessageFromProcess.DONE, parentProcess);
+                                            parentIO.IO_Provider.IO_Semaphore.release();
+                                        }
+                                        else {
+                                            parentIO.IO_Provider.deliverMessage(DMA.MessageFromProcess.USING_IO, parentProcess);
+                                        }
                                         break;
                                 }
-                                // message dmamessage;
-                                // while true {
-                                // check dma messages
-                                // if null continue
-                                // if message CONTINUE {
-                                    // ioCyclesWaited += 1
-                                    // if ioCyclesWaited == ioCyclesToWait {
-                                        // dma.message(I am done!)
-                                        // semaphore release()
-                                        // }
-                                    // }
-                                // if message AWAIT break
-                                // if message AQUIRE {
-                                    // dma.acquiresemaphore()
-                                    // ioCyclesWaited += 1
-                                    // if ioCyclesWaited == ioCyclesToWait {
-                                        // dma.message(I am done!)
-                                        // semaphore release()
-                                        // }
-                                    // }
                                 break;
                             case ProcessState.READY:
                                 // Code
