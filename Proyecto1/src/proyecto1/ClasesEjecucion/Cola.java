@@ -32,7 +32,12 @@ public class Cola<T> {
     }
     
     public T getValue() {
-        return first.getValue();
+        if (first != null) {
+            return first.value;
+        }
+        else {
+            return null;
+        }
     }
     
     public T dequeue() {
@@ -43,6 +48,12 @@ public class Cola<T> {
             last = null;
         }
         return value;
+    }
+    
+    public void clearOut() {
+        first = null;
+        last = null;
+        length = 0;
     }
     
     private class Node {

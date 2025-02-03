@@ -33,7 +33,10 @@ public class Proceso {
     // Enumerador contiene los posibles mensajes del Scheduler cuando el proceso
     // está en RUNNING o BLOCKED
     public enum Scheduling_Messages {
-        // (Mensajes aquí)
+        MANTAIN_STATE,
+        BECOME_RUNNING,
+        BECOME_READY,
+        BECOME_BLOCKED
     }
     
     // Contenedor de información de los comportamientos IO Bound
@@ -88,6 +91,10 @@ public class Proceso {
         ioBound = new IO_Bound_Behavior(ioFrequency, dmaReference);
     }
     
+    // Método: Guarda un mensaje del DMA
+    public void getMessageFromDMA(DMA_Messages newMessage) {
+        dmaQueue.Queue(newMessage);
+    }
     // Método: Retorna el ID del Proceso
     public int getProcessID() {
         return processID;
@@ -149,6 +156,9 @@ public class Proceso {
         @Override
         public void run(){
             int cyclesUntilNextIO = 0;
+            if (parentIO != null) {
+                cyclesUntilNextIO = parentIO.callFrequency;
+            }
             try {
                 while (true) {
                 // Código de ejecución del Thread
@@ -159,6 +169,20 @@ public class Proceso {
                                 break;
                             case ProcessState.RUNNING:
                                 // Code
+                                // realCyclesDone += 1
+                                // if parent.isIOBound {
+                                    // cyclesUntilNextIO -= 1
+                                    // if cyclesUntilNextIO == 0 {
+                                        // scheduler.message("I made an IO Call")
+                                        // cyclesUntilNextIO = parent.iofrequency
+                                    // }
+                                    // else {
+                                        // scheduler.message("Executed normally")
+                                    // }
+                                // }
+                                // else {
+                                    // scheduler.message("Executed normally")
+                                // }
                                 break;
                             case ProcessState.BLOCKED:
                                 DMA_Messages currentOperation;
@@ -177,20 +201,23 @@ public class Proceso {
                                         break;
                                     // El DMA comienza a realizar E/S para el proceso este ciclo
                                     case CONNECT:
-                                        try {
-                                            parentIO.IO_Provider.IO_Semaphore.acquire();
-                                        }
-                                        catch (InterruptedException e) {
-                                            System.out.println("Failed to Acquire on Connect Message");
-                                            break;
-                                        }
-                                        ioCyclesWaited += 1;
-                                        if (ioCyclesWaited == ioCyclesToWait) {
-                                            parentIO.IO_Provider.deliverMessage(DMA.MessageFromProcess.DONE, parentProcess);
-                                            parentIO.IO_Provider.IO_Semaphore.release();
-                                        }
-                                        else {
-                                            parentIO.IO_Provider.deliverMessage(DMA.MessageFromProcess.USING_IO, parentProcess);
+                                        boolean gotPermit = parentIO.IO_Provider.IO_Semaphore.tryAcquire();
+                                        switch (gotPermit){
+                                            case (null):
+                                                break;
+                                            case (true):
+                                                ioCyclesWaited += 1;
+                                                if (ioCyclesWaited == ioCyclesToWait) {
+                                                    parentIO.IO_Provider.deliverMessage(DMA.MessageFromProcess.DONE, parentProcess);
+                                                    parentIO.IO_Provider.IO_Semaphore.release();
+                                                }
+                                                else {
+                                                    parentIO.IO_Provider.deliverMessage(DMA.MessageFromProcess.USING_IO, parentProcess);
+                                                }
+                                                break;
+                                            case (false):
+                                                System.out.println("Failed to Acquire on Connect Message");
+                                                break;
                                         }
                                         break;
                                     // El DMA continua otorgando E/S este ciclo

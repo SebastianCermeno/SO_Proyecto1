@@ -14,4 +14,18 @@ public class Scheduler {
     // Necesita: Lista de Ejecución
     // Necesita: Método para comunicarse con los procesos Ready y Running
     
+    // Enumerador contiene los posibles mensajes que el Scheduler puede recibir de un Proceso
+    public enum MessagesToScheduler {
+        EXECUTED,
+        REQUESTED_IO,
+        IS_READY,
+        FINISHED_EXECUTION,
+    }
+    
+    private int cpuCount;
+    private SchedulingQueue<Proceso> readyQueue = new SchedulingQueue();
+    
+    private class SchedulingQueue<T> extends Cola<T> {
+    
+    }
 }
