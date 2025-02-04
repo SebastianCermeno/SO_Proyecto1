@@ -33,7 +33,7 @@ public class Proceso {
     // Enumerador contiene los posibles mensajes del Scheduler cuando el proceso
     // está en RUNNING o BLOCKED
     public enum Scheduling_Messages {
-        MANTAIN_STATE,
+        MAINTAIN_STATE,
         BECOME_RUNNING,
         BECOME_READY,
         BECOME_BLOCKED
@@ -66,8 +66,8 @@ public class Proceso {
     private IO_Bound_Behavior ioBound;
     
     // Variables de IPC (Interprocess Communication)
-    Cola dmaQueue = new Cola<DMA_Messages>();
-    Cola schedulingQueue = new Cola<Scheduling_Messages>();
+    Cola<DMA_Messages> dmaQueue = new Cola();
+    Cola<Scheduling_Messages> schedulingQueue = new Cola();
     
     // Constructor 1: Proceso no usa E/S
     public void Proceso(int newProcessID, String newProcessName, int duration){
@@ -238,6 +238,25 @@ public class Proceso {
                                 break;
                         }
                         cyclesAlive += 1;
+                        while (true) {
+                            int hasMessage = schedulingQueue.length;
+                            if (hasMessage == 1) {
+                                break;
+                            }
+                        }
+                        Scheduling_Messages currentMessage = schedulingQueue.dequeue();
+                        switch (currentMessage) {
+                            // pendiente código de cambio de estado
+                            case Scheduling_Messages.MAINTAIN_STATE:
+                                break;
+                            case Scheduling_Messages.BECOME_READY:
+                                break;
+                            case Scheduling_Messages.BECOME_RUNNING:
+                                break;
+                            case Scheduling_Messages.BECOME_BLOCKED:
+                                break;
+                        }
+                        
                         // Ciclo de checkeo de la cola de mensajes
                         // Throws una interrupción dependiendo del mensaje
                         // while (true) {

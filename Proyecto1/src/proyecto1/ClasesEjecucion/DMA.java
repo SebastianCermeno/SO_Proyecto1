@@ -23,6 +23,7 @@ public class DMA {
     public Semaphore IO_Semaphore;
     public Cola<ProcessMessageContainer> messageQueue;
     public Cola<Proceso> processesExitingBlocked;
+    public Scheduler shortTermDispatcher;
     private ProcessList processList;
     
     // Constructor: Recibe cuantas operaciones de DMA puede manejar a la vez.
@@ -31,6 +32,15 @@ public class DMA {
         messageQueue = new Cola();
         processesExitingBlocked = new Cola();
         processList = new ProcessList();
+        shortTermDispatcher = null;
+    }
+    
+    // Método: Entrega al Scheduler los procesos que salen de BLOCKED
+    public void deliverExitingBlocked() {
+        int numberOfExits = processesExitingBlocked.length;
+        for (int i = 0; i < numberOfExits; i++) {
+            shortTermDispatcher.transitFromBlocked(processesExitingBlocked.dequeue());
+        }
     }
     
     // Contenedor de mensajes, con referencia al proceso que los envía
@@ -58,9 +68,42 @@ public class DMA {
         }
         
         public void popFirst() {
+            if (root != null) {
+                root = root.next;
+                length--;
+            }
         }
         
         public void popLast() {
+            if (last != null) {
+                ProcessNode newLast = last.previous;
+                newLast.next = null;
+                last = newLast;
+                length--;
+            }
+        }
+        
+        public ProcessNode popAndReturn(int processID, ProcessNode access) {
+            if (access == null) {
+                return null;
+            }
+            else {
+                if (access.storedProcess.getProcessID() == processID) {
+                    return access;
+                }
+                else {
+                    return popAndReturn(processID, access.next);
+                }
+            }
+        }
+        
+        public void findAndUpdatePermit(boolean permitStatus, int processID, ProcessNode access) {
+            if (access.storedProcess.getProcessID() == processID) {
+                access.hasPermit = permitStatus;
+            }
+            else if (access.next != null) {
+                findAndUpdatePermit(permitStatus, processID, access.next);
+            }
         }
     }
     
@@ -78,7 +121,6 @@ public class DMA {
             while (true) {
                 processesExitingBlocked.clearOut();
                 availablePermits += IO_Semaphore.availablePermits();
-                int processListLength = processList.getLength();
                 orderDMA(processList.root);
                 while (true) {
                     int responseNumber = messageQueue.length;
@@ -90,48 +132,22 @@ public class DMA {
                 for (int i = 0; i < responseNumber; i++) {
                     ProcessMessageContainer currentMessage = messageQueue.dequeue();
                     if (currentMessage.message == MessageFromProcess.DONE) {
+                        ProcessNode toLeaveBlocked = processList.popAndReturn(currentMessage.process.getProcessID(), processList.root);
+                        if (toLeaveBlocked != null) {
+                            processesExitingBlocked.Queue(toLeaveBlocked.storedProcess);
+                        }
+                        else {
+                            System.out.println("Process not found");
+                        }
                     }
                     else if (currentMessage.message == MessageFromProcess.USING_IO) {
-                    
+                        processList.findAndUpdatePermit(true, currentMessage.process.getProcessID(), processList.root);
                     }
                 }
+                deliverExitingBlocked();
+                shortTermDispatcher.messagesFromDMA.Queue(Scheduler.DMAToScheduler.FINISHED);
+                // Rutina de manejo de interfaz
             }
-        // while true {
-            // blockExitQueue.clearOut()
-            // int permits_to_grant = 0
-            // check how many permits are available
-            // if (permits available > 0) {
-                // permits_to_grant = permits available
-            // }
-            // for each process in ProcessList {
-                // if (process.hasPermit == false AND permits_to_grant > 0) {
-                    // process.message(CONNECT)
-                // }
-                // else if (process.hasPermit == true) {
-                    // process.message(STAY)
-                // }
-                // else if (process.hasPermit == false AND permits_to_grant == 0) {
-                    // process.message(AWAIT)
-                // }
-            // }
-            // while true {
-                // int responseNumber = messsageQueue.length
-                // if responseNumber == ProcessList.length {
-                    // break;
-                // }
-            // }
-            // for message in messageQueue {
-                // if message == DONE {
-                    // Proceso exitingBlocked = ProcessList.findPopAndReturn(message.sender.ID)
-                    // blockExitQueue.Queue(exitingBlocked)
-                // }
-                // if message == USING_IO {
-                    // ProcessList.findAndUpdate(hasPermit, true, message.sender.ID)
-                // }
-            // }
-            // Scheduler.deliverExitingFromBlocked()
-            // Scheduler.message("Finished Cycle")
-            // Interface.deliverCycleEndState()
         }
         private void orderDMA(ProcessNode startingPoint) {
             if ((startingPoint.hasPermit == false) && (availablePermits > 0)) {
