@@ -1,9 +1,8 @@
-package proyecto1.ClasesEjecucion;
-
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
+package proyecto1.ClasesEjecucion;
 
 /**
  *
@@ -48,6 +47,27 @@ public class Cola<T> {
             last = null;
         }
         return value;
+    }
+    
+    public T popAt(T object) {
+        if (first == null) { return null; }
+        T value = first.getValue();
+        Node currentPosition = first;
+        while (value != object) {
+            currentPosition = currentPosition.next;
+            if (currentPosition == null) {
+                break;
+            }
+            value = currentPosition.value;
+        }
+        if (currentPosition == null) { return null; }
+        else {
+            if (currentPosition.previous != null) {
+                currentPosition.previous.next = currentPosition.next;
+            }
+            length--;
+            return value;
+        }
     }
     
     public void clearOut() {

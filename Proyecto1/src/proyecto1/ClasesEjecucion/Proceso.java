@@ -56,12 +56,15 @@ public class Proceso {
     
     // Variables del Process Control Block
     private int processID;
+    private bool proceedFlag = false;
     ProcessState currentState;
     private String processName;
-    private int cyclesToFinish;
+    private int cycleDuration;
     MemoryAddressRegister stateMAR;
     
     // Variables de ejecución
+    public int startCycle;
+    public int cyclesAlive = 0;
     private int cyclesPerformed;
     private IO_Bound_Behavior ioBound;
     
@@ -70,30 +73,41 @@ public class Proceso {
     Cola<Scheduling_Messages> schedulingQueue = new Cola();
     
     // Constructor 1: Proceso no usa E/S
-    public void Proceso(int newProcessID, String newProcessName, int duration){
+    public void Proceso(int newProcessID, String newProcessName, int duration, int joinsAt){
         processID = newProcessID;
         processName = newProcessName;
-        cyclesToFinish = duration;
+        cycleDuration = duration;
         currentState = ProcessState.NEW;
+        startCycle = joinsAt;
         
         cyclesPerformed = 0;
         ioBound = null;
     }
     
     // Constructor 2: Proceso usa E/S
-    public void Proceso(int newProcessID, String newProcessName, int duration, int ioFrequency, DMA dmaReference) {
+    public void Proceso(int newProcessID, String newProcessName, int duration, int ioFrequency, DMA dmaReference, int joinsAt) {
         processID = newProcessID;
         processName = newProcessName;
-        cyclesToFinish = duration;
+        cycleDuration = duration;
         currentState = ProcessState.NEW;
+        startCycle = joinsAt;
         
         cyclesPerformed = 0;
         ioBound = new IO_Bound_Behavior(ioFrequency, dmaReference);
     }
     
+    // Método: Inicializa la ejecución del Proceso
+    public void comeAlive() {
+    
+    }
+    
     // Método: Guarda un mensaje del DMA
     public void getMessageFromDMA(DMA_Messages newMessage) {
         dmaQueue.Queue(newMessage);
+    }
+    
+    public void orderProceed() {
+        proceedFlag = true;
     }
     // Método: Retorna el ID del Proceso
     public int getProcessID() {
@@ -101,8 +115,8 @@ public class Proceso {
     }
     
     // Método: Retorna el número de ciclos total que debe ejecutarse el programa
-    public int getCyclesToFinish() {
-        return cyclesToFinish;
+    public int getCycleDuration() {
+        return cycleDuration;
     }
     
     // Método: Retorna el número de ciclos de ejecución realizados hasta ahora
@@ -134,9 +148,7 @@ public class Proceso {
         
         public Cola schedulingMessageQueue;
         public Proceso parentProcess;
-        public int cyclesAlive = 0;
         
-        public int cyclesToFinish;
         public int realCyclesPerformed;
         public boolean isIOBound;
         public IO_Bound_Behavior parentIO;
@@ -148,7 +160,6 @@ public class Proceso {
             schedulingMessageQueue = messageInbox;
             parentProcess = parent;
             
-            cyclesToFinish = parentProcess.getCyclesToFinish();
             realCyclesPerformed = parentProcess.getCyclesDone();
             isIOBound = parentProcess.isIOBound();
             parentIO = parentProcess.getIOComponent();
@@ -163,6 +174,7 @@ public class Proceso {
                 while (true) {
                 // Código de ejecución del Thread
                     try {
+                        proceedFlag = false;
                         switch(parentProcess.currentState){
                             case ProcessState.NEW:
                                 // Code
@@ -240,7 +252,7 @@ public class Proceso {
                         cyclesAlive += 1;
                         while (true) {
                             int hasMessage = schedulingQueue.length;
-                            if (hasMessage == 1) {
+                            if (hasMessage >= 1) {
                                 break;
                             }
                         }
@@ -266,6 +278,11 @@ public class Proceso {
                             // if message READY throw clock exception(ready)
                             // if message BLOCKED throw clock exception(block)
                             // }
+                        while (true) {
+                            if (proceedFlag == true) {
+                                throw new ClockCycleException;
+                            }
+                        }
                     }
                     catch (ClockCycleException e) {
                         // Guardado del estado del proceso en thread

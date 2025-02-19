@@ -26,6 +26,10 @@ public class DMA {
     public Scheduler shortTermDispatcher;
     private ProcessList processList;
     
+    // Thread de ejecución
+    private DMAExecution dmaRun = new DMAExecution();
+    public boolean isExecuting = false;
+    
     // Constructor: Recibe cuantas operaciones de DMA puede manejar a la vez.
     public void DMA(int processesManaged) {
         IO_Semaphore = new Semaphore(processesManaged);
@@ -41,6 +45,11 @@ public class DMA {
         for (int i = 0; i < numberOfExits; i++) {
             shortTermDispatcher.transitFromBlocked(processesExitingBlocked.dequeue());
         }
+    }
+    
+    // Método: Inicializa la ejecución
+    public void beginExecution() {
+        dmaRun.start();
     }
     
     // Contenedor de mensajes, con referencia al proceso que los envía
@@ -83,12 +92,16 @@ public class DMA {
             }
         }
         
+        // REVISAR ESTE METODO
         public ProcessNode popAndReturn(int processID, ProcessNode access) {
             if (access == null) {
                 return null;
             }
             else {
                 if (access.storedProcess.getProcessID() == processID) {
+                    if (access.previous != null) {
+                        access.previous.next = access.next;
+                    }
                     return access;
                 }
                 else {
@@ -105,6 +118,13 @@ public class DMA {
                 findAndUpdatePermit(permitStatus, processID, access.next);
             }
         }
+        
+        public void activate(ProcessNode beginning) {
+            beginning.storedProcess.orderProceed();
+            if ((beginning != last) && (beginning.next != null)) {
+                activate(beginning.next);
+            }
+        }
     }
     
     private class ProcessNode {
@@ -119,8 +139,10 @@ public class DMA {
         @Override
         public void run(){
             while (true) {
+                isExecuting = false;
                 processesExitingBlocked.clearOut();
                 availablePermits += IO_Semaphore.availablePermits();
+                processList.activate(processList.root);
                 orderDMA(processList.root);
                 while (true) {
                     int responseNumber = messageQueue.length;
@@ -147,6 +169,12 @@ public class DMA {
                 deliverExitingBlocked();
                 shortTermDispatcher.messagesFromDMA.Queue(Scheduler.DMAToScheduler.FINISHED);
                 // Rutina de manejo de interfaz
+                // PENDIENTE
+                while (true) {
+                    if (isExecuting == true) {
+                        break;
+                    }
+                }
             }
         }
         private void orderDMA(ProcessNode startingPoint) {
